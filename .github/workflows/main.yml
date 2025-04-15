@@ -2,6 +2,7 @@ name: Build Kernel (4.9 - crDroid)
 on:
   workflow_dispatch:
   schedule:
+    # Setiap Sabtu pukul 00:00 UTC
     - cron: "0 0 * * 6"
   push:
     branches:
@@ -19,8 +20,8 @@ jobs:
       CCACHE_MAXSIZE: "2G"
       CCACHE_HARDLINK: "true"
       KERNEL_DEFCONFIG: "lancelot-stock_defconfig"
-      KERNEL_CMDLINE: "ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- O=out"
-
+      KERNEL_CMDLINE: "ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- O=out"
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,35 +34,29 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update -y
-          sudo apt install gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi -y
-          sudo apt install aria2 binutils make python3 libssl-dev build-essential bc bison flex unzip ca-certificates xz-utils mkbootimg cpio device-tree-compiler git git-lfs -y
-
-          # Download AOSP Clang r383902 (LLVM 12)
-          mkdir clang-aosp && cd clang-aosp
-          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-11.0.0_r35/clang-r383902.tar.gz
-          tar -xf clang-r383902.tar.gz
-          cd ..
-
-          # AnyKernel3 setup
+          sudo apt-get update -y 
+          sudo apt install gcc-aarch64-linux-gnu -y
+          sudo apt install gcc-arm-linux-gnueabi -y
+          sudo apt install gcc-8 -y
+          sudo apt install aria2 binutils make python3 libssl-dev build-essential bc bison flex unzip libssl-dev ca-certificates xz-utils mkbootimg cpio device-tree-compiler git git-lfs -y
+          curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s Y
           git clone https://github.com/osm0sis/AnyKernel3
           sed -i 's/do.devicecheck=1/do.devicecheck=0/g' AnyKernel3/anykernel.sh
           sed -i 's!BLOCK=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!BLOCK=auto;!g' AnyKernel3/anykernel.sh
           sed -i 's/IS_SLOT_DEVICE=0;/is_slot_device=auto;/g' AnyKernel3/anykernel.sh
           rm -rf AnyKernel3/.git* AnyKernel3/README.md
-
-          # Mem module
+          # mem module
           curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M vinn
 
       - name: GetTime
         id: get_time
-        run: echo "TIME=$(TZ=UTC+3 date +%s)" >> $GITHUB_OUTPUT
+        run: |
+          echo "TIME=$(TZ=UTC+3 date +%s )" >> $GITHUB_OUTPUT
 
       - name: Build Kernel-With-KernelSU
         run: |
-          export PATH=$(pwd)/clang-aosp/bin:$PATH
-          make $KERNEL_CMDLINE $KERNEL_DEFCONFIG CC="ccache clang"
-          make $KERNEL_CMDLINE CC="ccache clang" -j$(nproc --all)
+          make $KERNEL_CMDLINE $KERNEL_DEFCONFIG
+          make $KERNEL_CMDLINE -j$(nproc --all)
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
 
       - name: Upload Kernel-SU
@@ -69,9 +64,10 @@ jobs:
         with:
           name: Nyan_kernel-KSU-${{ steps.get_time.outputs.TIME }}
           path: "AnyKernel3/*"
-
+    
       - name: Upload mem module
         uses: actions/upload-artifact@v4
         with:
           name: memodule
           path: "./out/drivers/memkernel/vinn_memk.ko"
+          
