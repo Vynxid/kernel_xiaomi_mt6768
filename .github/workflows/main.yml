@@ -1,0 +1,22 @@
+name: Build via Shell Script
+
+on:
+  push:
+    branches:
+      - genom-release # ganti sesuai branch kamu
+  workflow_dispatch:  # biar bisa run manual dari GitHub UI
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Give execute permission to script
+        run: chmod +x build_kernel.sh
+
+      - name: Run Shell Script
+        run: ./build_kernel.sh
+        
