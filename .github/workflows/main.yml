@@ -1,22 +1,22 @@
-name: Build via Shell Script
+name: Kernel Build (MT6768)
 
 on:
   push:
     branches:
-      - genom-release # ganti sesuai branch kamu
-  workflow_dispatch:  # biar bisa run manual dari GitHub UI
+      - genom-release
+  workflow_dispatch:
 
 jobs:
-  run-script:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Give execute permission to script
+      - name: Set execute permission to build_kernel.sh
         run: chmod +x build_kernel.sh
 
-      - name: Run Shell Script
+      - name: Run Kernel Build Script
         run: ./build_kernel.sh
-        
+
