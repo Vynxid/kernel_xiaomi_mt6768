@@ -120,7 +120,7 @@ then
 fi
 
 #telegram env
-CHATID=-1001459070028
+CHATID=1814545081
 BOT_MSG_URL="https://api.telegram.org/bot$TOKEN/sendMessage"
 BOT_BUILD_URL="https://api.telegram.org/bot$TOKEN/sendDocument"
 
